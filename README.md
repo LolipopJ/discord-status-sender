@@ -11,7 +11,7 @@ pipenv install
 pipenv shell
 ```
 
-拷贝 `.env.example` 里的内容，新建 `.env`：
+添加环境变量。拷贝 `.env.example` 里的内容，新建 `.env`；或使用 Docker 部署时，编辑 `docker-compose.yml` 中的配置项 `environment`：
 
 - 修改 `DISCORD_TOKEN` 为子账户的 `authorization` 令牌。
 - 修改 `DISCORD_CHANNEL_ID` 为子账户与主账户的私聊频道编号。

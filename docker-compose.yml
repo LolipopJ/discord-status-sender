@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    image: discord-status-sender:latest
+    restart: unless-stopped
+    environment:
+      - PORT=28800
+      - DISCORD_TOKEN=YOUR_DISCORD_BOT_AUTHORIZATION_TOKEN
+      - DISCORD_CHANNEL_ID=AIMED_CHANNEL_ID_FOR_GATHERING_STATUS
+    ports:
+      - '28800:28800'
