@@ -26,6 +26,8 @@ pipenv shell
 
 - `DISCORD_ACTIVITY_CACHE_DURATION`：活动状态信息缓存时间，单位“秒”。默认值为 `30` 秒。
 - `PORT`：服务运行的端口号。默认为 `28800` 端口。
+- `PROXY`：网络请求的代理地址。默认为空，不启用网络代理。例如：`http://127.0.0.1:8080`。
+- `PROXY_AUTH`：网络请求代理的认证信息。默认为空，不设置代理认证。例如：`username:password`。
 
 ### 运行应用
 

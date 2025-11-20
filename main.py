@@ -2,6 +2,7 @@ import asyncio
 import os
 import time
 
+import aiohttp
 import discord
 import uvicorn
 from dotenv import load_dotenv
@@ -9,8 +10,14 @@ from fastapi import FastAPI
 
 load_dotenv()
 
+PORT = int(os.getenv("PORT", 28800))
+PROXY = os.getenv("PROXY")
+PROXY_AUTH = os.getenv("PROXY_AUTH")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
+DISCORD_ACTIVITY_CACHE_DURATION = float(
+    os.getenv("DISCORD_ACTIVITY_CACHE_DURATION", 30)
+)
 
 if not DISCORD_TOKEN or not DISCORD_CHANNEL_ID:
     raise ValueError(
@@ -24,9 +31,7 @@ class MyClient(discord.Client):
         self._recipient = None
         self._queried_activities = []
         self._last_query_time = float(0)
-        self._activity_cache_duration = float(
-            os.getenv("DISCORD_ACTIVITY_CACHE_DURATION", 30)
-        )
+        self._activity_cache_duration = DISCORD_ACTIVITY_CACHE_DURATION
 
     async def on_ready(self):
         print(f"✅ Discord client Logged in as {self.user}")
@@ -52,9 +57,7 @@ class MyClient(discord.Client):
             return self._queried_activities
 
         if self.is_ready() is False:
-            print(
-                "❌ Discord client is not ready. If long time waited, please check if the network was able to connect Discord server."
-            )
+            print("❌ Discord client is not ready.")
             return []
 
         if self._recipient is None:
@@ -93,7 +96,15 @@ class MyClient(discord.Client):
         return int(self._last_query_time)
 
 
-client = MyClient()
+proxy = None
+proxy_auth = None
+if PROXY:
+    proxy = PROXY
+if PROXY_AUTH:
+    user, pwd = PROXY_AUTH.split(":", 1)
+    proxy_auth = aiohttp.BasicAuth(user, pwd)
+
+client = MyClient(proxy=proxy, proxy_auth=proxy_auth)
 
 
 async def start_discord_client():
@@ -101,6 +112,11 @@ async def start_discord_client():
 
 
 async def lifespan(app: FastAPI):
+    if PROXY:
+        print(f"🔀 Proxy enabled: {PROXY}")
+    if PROXY_AUTH:
+        print("🔐 Proxy auth enabled.")
+
     print("🚀 Starting Discord client...")
     task = asyncio.create_task(start_discord_client())
     yield
@@ -137,6 +153,4 @@ def activity():
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app", host="0.0.0.0", port=int(os.getenv("PORT", 28800)), reload=True
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
