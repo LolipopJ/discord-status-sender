@@ -45,15 +45,13 @@ python main.py
 
 ## 贡献代码
 
-在提交前自动格式化代码：
-
 ```bash
 # 安装完整的依赖库
 pipenv install --dev
 # 进入虚拟环境
 pipenv shell
-# 注册 commit 钩子
+# 注册 commit 钩子，在提交前自动格式化代码
 pre-commit install
 # 监听代码更改并自动重启服务
-python main.py
+python main.py --dev
 ```

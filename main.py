@@ -1,6 +1,8 @@
+import argparse
 import asyncio
 import os
 import time
+import traceback
 
 import aiohttp
 import discord
@@ -8,7 +10,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
-load_dotenv()
+load_dotenv(override=True)
 
 PORT = int(os.getenv("PORT", 28800))
 PROXY = os.getenv("PROXY")
@@ -18,11 +20,6 @@ DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 DISCORD_ACTIVITY_CACHE_DURATION = float(
     os.getenv("DISCORD_ACTIVITY_CACHE_DURATION", 30)
 )
-
-if not DISCORD_TOKEN or not DISCORD_CHANNEL_ID:
-    raise ValueError(
-        "❌ `DISCORD_TOKEN` and `DISCORD_CHANNEL_ID` must be set in environment variables."
-    )
 
 
 class MyClient(discord.Client):
@@ -108,16 +105,24 @@ client = MyClient(proxy=proxy, proxy_auth=proxy_auth)
 
 
 async def start_discord_client():
-    await client.start(DISCORD_TOKEN)
+    print("🚀 Starting Discord client...")
+    if proxy:
+        print(f"🔀 Proxy enabled: {proxy}")
+    if proxy_auth:
+        print("🔐 Proxy auth enabled.")
+    try:
+        if not DISCORD_TOKEN or not DISCORD_CHANNEL_ID:
+            raise ValueError(
+                "❌ `DISCORD_TOKEN` and `DISCORD_CHANNEL_ID` must be set in environment variables."
+            )
+        print(f"🔑 Discord client token present, prefix: {DISCORD_TOKEN[:8]}")
+        await client.start(DISCORD_TOKEN)
+    except Exception as e:
+        print("❌ Discord client failed to start:", type(e), e)
+        traceback.print_exc()
 
 
 async def lifespan(app: FastAPI):
-    if PROXY:
-        print(f"🔀 Proxy enabled: {PROXY}")
-    if PROXY_AUTH:
-        print("🔐 Proxy auth enabled.")
-
-    print("🚀 Starting Discord client...")
     task = asyncio.create_task(start_discord_client())
     yield
 
@@ -153,4 +158,22 @@ def activity():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)
+    parser = argparse.ArgumentParser(description="Run Discord Activity Sender")
+    parser.add_argument(
+        "--dev",
+        "--reload",
+        action="store_true",
+        dest="dev",
+        help="Enable auto-reload (development)",
+    )
+    parser.add_argument("--host", default="0.0.0.0", help="Host to bind")
+    parser.add_argument("--port", type=int, default=PORT, help="Port to bind")
+    args = parser.parse_args()
+
+    uvicorn.run(
+        "main:app",
+        host=args.host,
+        port=args.port,
+        reload=args.dev,
+        log_level="debug" if args.dev else "info",
+    )
