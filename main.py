@@ -10,6 +10,8 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from utils import stringify_ids
+
 load_dotenv(override=True)
 
 PORT = int(os.getenv("PORT", 28800))
@@ -76,7 +78,7 @@ class MyClient(discord.Client):
         relation = self.get_relationship(recipientId)
         if relation is not None:
             self._queried_activities = [
-                activity.to_dict() for activity in relation.activities
+                stringify_ids(activity.to_dict()) for activity in relation.activities
             ]
             self._last_query_time = time.time()
             print(
